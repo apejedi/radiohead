@@ -6,3 +6,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [overtone "0.9.1"]
                  ])
+                                        ;D major 1
+                                        ; a major 0
+                                        ; a major 1
+                                        ;b minor 0
