@@ -1,8 +1,42 @@
 (ns radiohead.core
   (:use overtone.core)
+  (:import (java.util Date))
   )
 
 
+(defn play-arpeggio
+  "A function to play a given chord using a given synth and distances.
+  The synth must take a midi note as the first argument."
+  ([root]
+     (play-arpeggio root :major 0  0.5 (now))
+     )
+  ([root type]
+     (play-arpeggio root type 0  0.5 (now))
+     )
+  ([root type inversion]
+     (play-arpeggio root type inversion 0.5 (now))
+     )
+  ([root type inversion note-duration]
+     (play-arpeggio root type inversion note-duration (now))
+   )
+  ([root type inversion note-duration start-at]
+     ;(if (not (synth? synth))
+       ;(throw (IllegalArgumentException. "function requires a synth"))
+       ;)
+     (let  [
+            notes (invert-chord (chord root type) inversion)
+            delta (* note-duration 1000)
+            start (+ (now) delta)
+            offsets (iterate #(+ % delta) start)
+            ]
+       (map (fn [note offset]
+              (println "playing " note " at " offset)
+              (at offset (sin-inst note))
+              )
+            notes offsets)
+       )
+     )
+  )
 (definst sin-inst [note 60 gate 1]
            (let [
                  env (env-gen:kr (perc 0.5) :gate gate :action 2)
@@ -10,43 +44,5 @@
              (* env (sin-osc (midicps note)))
              )
            )
-
-(defn play-arpeggio
-  "A function to play a given chord using a given synth and distances.
-  The synth must take a midi note as the first argument."
-  ([synth root]
-     (play-arpeggio synth root :major 0 [] 1)
-     )
-  ([synth root type]
-     (play-arpeggio synth root type 0 [] 1)
-     )
-  ([synth root type inversion]
-     (play-arpeggio synth root type inversion [] 1)
-   )
-  ([synth root type inversion distances note-duration]
-     ;(if (not (synth? synth))
-       ;(throw (IllegalArgumentException. "function requires a synth"))
-       ;)
-     (let  [
-            distances (cond
-                       (and (seq? distances) (> (count distances) 0)) distances
-                       :else [500]
-                       )
-            note1 (first (invert-chord (chord root type) inversion))
-            notes (rest (invert-chord (chord root type) inversion))
-            start (now)
-            ]
-       (sin-inst note1)
-       (loop [notes notes d distances now start]
-         (at (+ now (first d)) (sin-inst (first notes)))
-         (if (not (= nil (seq (rest notes))))
-           (recur
-            (vec (rest notes))
-            (if (not (= nil (seq (rest d)))) (vec (rest d)) [500])
-            (+ now (first d))
-            )
-           )
-         )
-       )
-     )
-  )
+;(play-arpeggio :A4)
+;(kill sin-inst)
