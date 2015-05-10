@@ -3,10 +3,10 @@
         overtone.core)
   )
 
-(def progression
-  [[:D4 :major 1]
-   [:A4 :major 0]
-   [:B4 :minor 0]
+(def progression1
+  [[:D4 :major 1 0.25 (flatten (repeat 11 [2 1 0]))]
+   [:A4 :major 0 0.25 (flatten (repeat 11 [2 1 0]))]
+   [:B4 :minor 0 0.25 (flatten (repeat 11 [2 1 0]))]
    ])
 
 (doseq [chord progression]
@@ -15,22 +15,25 @@
 
 
 (defn play-progression [progression]
-  (let [start (now)
-        delta 4000
-        offsets (iterate #(+ % delta) start)
-        ]
-    (map (fn [chord offset]
-           (println "playing " chord " at " offset)
-           (at offset (apply play-arpeggio chord)))
-         progression offsets)
-    )
+    (reduce (fn [offset chord]
+              (println "playing " chord  " at " offset)
+              (apply play-arpeggio (vec (conj chord offset)))
+              )
+            (now)
+            progression)
+    ;; (map (fn [chord]
+    ;;        (println "playing " chord)
+    ;;        (at offset (apply play-arpeggio chord))
+    ;;        )
+    ;;      progression)
   )
-(play-progression progression)
 
-(play-arpeggio :D4 :major 1)
-(play-arpeggio :A4 :major 0)
-(play-arpeggio :B4 :minor 0)
+(play-progression progression1)
 
+(play-arpeggio :D4 :major 1 0.25 (flatten (repeat 11 [2 1 0])) (now))
+(play-arpeggio :A4 :major 0 0.25 (flatten (repeat 11 [2 1 0])) (now))
+(play-arpeggio :B4 :minor 0 0.25 (flatten (repeat 11 [2 1 0])) (now))
+(stop)
 
 
 ;; (dotimes [i ]
