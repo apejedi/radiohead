@@ -1,19 +1,20 @@
 (ns radiohead.core
-  (:use overtone.core))
-(:import (java.util Date))
+  (:use overtone.core)
+  (:import (java.util Date)))
 
 
 (def note-duration 1)
 (definst sin-inst [note 60 gate 1 note-duration 1]
   (let [
         ;env (env-gen (perc note-duration) :gate gate :action 2)
-        env (env-gen (envelope [0.7 1 0] [(* 0.1 note-duration) (* 0.9 note-duration)] :welch) :gate gate :action 2)
+        env (env-gen (envelope [0.7 1 0] [(* 0.03 note-duration) (* 0.9 note-duration)] :welch) :gate gate :action 2)
         ;env (env-gen (adsr :sustain 0.2) :action 2)
         ]
     (* env
        (+
         (sin-osc (midicps note))
         (*  (sin-osc (midicps (+ 19 note))) 0.08)
+        (* (sin-osc (midicps (- note 12))) 0.04)
         )
        0.5)
     )
@@ -68,28 +69,30 @@
 
 (defn play-notes
   ([notes]
-     (play-notes notes note-duration note-duration sin-inst)
+     (play-notes notes 1 1 sin-inst (now))
      )
   ([notes note-duration]
-     (play-notes notes note-duration note-duration sin-inst)
+     (play-notes notes note-duration note-duration sin-inst (now))
      )
   ([notes note-duration delta]
-     (play-notes notes delta note-duration sin-inst)
+     (play-notes notes delta note-duration sin-inst (now))
      )
-  ([notes note-duration delta synth]
-     (let  [
+  ([notes note-duration delta synth start-at]
+   (let  [
             delta (* delta 1000)
                                         ;start (+ (now) delta)
-            start (now)
-            offsets (iterate #(+ % delta) start)
+;           start (now)
+            offsets (iterate #(+ % delta) start-at)
             ]
-       (doall (map (fn [note offset]
-                     (at offset (synth note :note-duration note-duration))
+     (doall (map (fn [note-name offset]
+                   (println note)
+                     (at offset (synth (note note-name) :note-duration note-duration))
                      )
                    notes offsets)
               )
+       (nth offsets  (count notes))
        ))
-  )
+     )
 
 
 (play-notes (map note [:C6 :A4]) 0.2)
@@ -124,6 +127,49 @@
    4.2
    5.4
    6.8])
+
+
+(definst b3
+  [note 60 a 0.01 d 3 s 1 r 0.01]
+  (let [freq  (midicps note)
+        waves (sin-osc [(* 0.5 freq)
+                        freq
+                        (* (/ 3 2) freq)
+                        (* 2 freq)
+                        (* freq 2 (/ 3 2))
+                        (* freq 2 2)
+                        (* freq 2 2 (/ 5 4))
+                        (* freq 2 2 (/ 3 2))
+                        (* freq 2 2 2)])
+        snd   (apply + waves)
+        env (env-gen (envelope [0.7 1 0] [(* 0.03 note-duration) (* 0.9 note-duration)] :welch) :action 2)
+                                        ;env   (env-gen (adsr a d s r) :action FREE)]
+        ]
+        (* env snd 0.1)))
+
+(defn play-progression [progression]
+   (reduce (fn [offset chord]
+             (apply play-arpeggio (vec (conj chord offset)))
+             )
+           (now)
+           progression)
+   )
+
+(defn play-sequences
+  (
+   [sequences]
+   (play-sequences sequences 1 1 sin-inst)
+   )
+  (
+   [sequences note-duration delta synth]
+   (reduce (fn [offset sequence]
+             (apply play-notes [sequence note-duration delta synth offset])
+             )
+           (now)
+           sequences)
+   )
+  )
+
 
 (defcgen bell-partials
   "Bell partial generator"
@@ -161,7 +207,7 @@
     (detect-silence snd :action FREE)
     snd))
 
-;(pretty-bell 60 2)
+;(pretty-bell 6 2)
 
 
 ;(play-arpeggio :A4)
