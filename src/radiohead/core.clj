@@ -4,7 +4,7 @@
 
 
 (def note-duration 1)
-(definst sin-inst [note 60 gate 1 note-duration 1]
+(definst sin-inst [note 60 gate 1 note-duration 1 mul 1]
   (let [
         ;env (env-gen (perc note-duration) :gate gate :action 2)
         env (env-gen (envelope [0.7 1 0] [(* 0.03 note-duration) (* 0.9 note-duration)] :welch) :gate gate :action 2)
@@ -12,9 +12,9 @@
         ]
     (* env
        (+
-        (sin-osc (midicps note))
-        (*  (sin-osc (midicps (+ 19 note))) 0.08)
-        (* (sin-osc (midicps (- note 12))) 0.04)
+        (* (sin-osc (midicps note)) mul)
+        (*  (sin-osc (midicps (+ 19 note))) 0.08 mul)
+        (* (sin-osc (midicps (- note 12))) 0.04 mul)
         )
        0.5)
     )
@@ -25,77 +25,121 @@
 (defn play-arpeggio
   "A function to play a given chord using a given synth and distances.
   The synth must take a midi note as the first argument."
-  ([root]
-     (play-arpeggio root :major 0  note-duration  [0 1 2] (now) sin-inst)
-     )
-  ([root type]
-     (play-arpeggio root type 0  note-duration  [0 1 2] (now) sin-inst)
-     )
-  ([root type inversion]
-     (play-arpeggio root type inversion note-duration  [0 1 2] (now) sin-inst)
-     )
-  ([root type inversion note-duration]
-     (play-arpeggio root type inversion note-duration [0 1 2] (now) sin-inst)
-     )
-  ([root type inversion note-duration order]
-     (play-arpeggio root type inversion note-duration order (now) sin-inst)
-     )
-  ([root type inversion note-duration order start-at]
-     (play-arpeggio root type inversion note-duration order start-at sin-inst)
-     )
-  ([root type inversion note-duration order start-at synth]
-                                        ;(if (not (synth? synth))
-                                        ;(throw (IllegalArgumentException. "function requires a synth"))
-                                        ;)
-     (let  [
-            sorted-notes (sort (invert-chord (chord root type) inversion))
-            notes (map #(nth sorted-notes %) order)
-            delta (* note-duration 1000)
-            ;;start (+ (now) delta)
-            start (+ start-at delta)
-            offsets (iterate #(+ % delta) start)
-            ]
-       (doall (map (fn [note offset]
-              (println "playing " note " at " offset)
-              (at offset (synth note))
-              )
-                   notes offsets)
-              )
-       (nth offsets  (count notes))
-       )
+  [& {:keys [root type inversion note-duration order start-at synth delta]
+      :or {root :C4 type :major inversion 0 note-duration 0.2 order [0 1 2] start-at (now) synth sin-inst delta (* note-duration 1000)}}]
+  (let  [
+         sorted-notes (sort (invert-chord (chord root type) inversion))
+         notes (map #(nth sorted-notes %) order)
+         ;;start (+ (now) delta)
+         start (+ start-at delta)
+         offsets (iterate #(+ % delta) start)
+         ]
+    (doall (map (fn [note offset]
+                  (println "playing " note " at " offset)
+                  (at offset (synth note))
+                  )
+                notes offsets)
+           )
+    (nth offsets  (count notes))
+    )
                                         ;(+ (* 1000 note-duration (count notes)) (sum offsets) start)
-     )
+
   )
+;; (defn play-arpeggio
+;;   "A function to play a given chord using a given synth and distances.
+;;   The synth must take a midi note as the first argument."
+;;   ([root]
+;;      (play-arpeggio root :major 0  note-duration  [0 1 2] (now) sin-inst)
+;;      )
+;;   ([root type]
+;;      (play-arpeggio root type 0  note-duration  [0 1 2] (now) sin-inst)
+;;      )
+;;   ([root type inversion]
+;;      (play-arpeggio root type inversion note-duration  [0 1 2] (now) sin-inst)
+;;      )
+;;   ([root type inversion note-duration]
+;;      (play-arpeggio root type inversion note-duration [0 1 2] (now) sin-inst)
+;;      )
+;;   ([root type inversion note-duration order]
+;;      (play-arpeggio root type inversion note-duration order (now) sin-inst)
+;;      )
+;;   ([root type inversion note-duration order start-at]
+;;      (play-arpeggio root type inversion note-duration order start-at sin-inst)
+;;      )
+;;   ([root type inversion note-duration order start-at synth]
+;;                                         ;(if (not (synth? synth))
+;;                                         ;(throw (IllegalArgumentException. "function requires a synth"))
+;;                                         ;)
+;;      (let  [
+;;             sorted-notes (sort (invert-chord (chord root type) inversion))
+;;             notes (map #(nth sorted-notes %) order)
+;;             delta (* note-duration 1000)
+;;             ;;start (+ (now) delta)
+;;             start (+ start-at delta)
+;;             offsets (iterate #(+ % delta) start)
+;;             ]
+;;        (doall (map (fn [note offset]
+;;               (println "playing " note " at " offset)
+;;               (at offset (synth note))
+;;               )
+;;                    notes offsets)
+;;               )
+;;        (nth offsets  (count notes))
+;;        )
+;;                                         ;(+ (* 1000 note-duration (count notes)) (sum offsets) start)
+;;      )
+;;   )
 
 (defn play-notes
-  ([notes]
-     (play-notes notes 1 1 sin-inst (now))
-     )
-  ([notes note-duration]
-     (play-notes notes note-duration note-duration sin-inst (now))
-     )
-  ([notes note-duration delta]
-     (play-notes notes delta note-duration sin-inst (now))
-     )
-  ([notes note-duration delta synth start-at]
-   (let  [
-            delta (* delta 1000)
+  [& {:keys [notes note-duration delta synth start-at mul]
+      :or {notes [:C4 :G4] note-duration 0.24 delta 0.2 synth sin-inst start-at (now) mul 1}}]
+  (let  [
+         delta (* delta 1000)
                                         ;start (+ (now) delta)
-;           start (now)
-            offsets (iterate #(+ % delta) start-at)
-            ]
-     (doall (map (fn [note-name offset]
-                   (println note)
-                     (at offset (synth (note note-name) :note-duration note-duration))
-                     )
-                   notes offsets)
-              )
-       (nth offsets  (count notes))
-       ))
-     )
+                                        ;           start (now)
+         offsets (iterate #(+ % delta) start-at)
+         ]
+    (doall (map (fn [note-name offset]
+                  (println note)
+                  (at offset (synth (note note-name) :note-duration note-duration :mul mul))
+                  )
+                notes offsets)
+           )
+    (nth offsets  (count notes))
+    )
+  )
+
+(play-notes :notes [:A4 :B3 :D4 :F#6])
 
 
-(play-notes (map note [:C6 :A4]) 0.2)
+;; (defn play-notes
+;;   ([notes]
+;;      (play-notes notes 1 1 sin-inst (now))
+;;      )
+;;   ([notes note-duration]
+;;      (play-notes notes note-duration note-duration sin-inst (now))
+;;      )
+;;   ([notes note-duration delta]
+;;      (play-notes notes delta note-duration sin-inst (now))
+;;      )
+;;   ([notes note-duration delta synth start-at]
+;;    (let  [
+;;             delta (* delta 1000)
+;;                                         ;start (+ (now) delta)
+;; ;           start (now)
+;;             offsets (iterate #(+ % delta) start-at)
+;;             ]
+;;      (doall (map (fn [note-name offset]
+;;                    (println note)
+;;                      (at offset (synth (note note-name) :note-duration note-duration))
+;;                      )
+;;                    notes offsets)
+;;               )
+;;        (nth offsets  (count notes))
+;;        ))
+;;      )
+
+
 
 
 (definst env-test [note 60 gate 1]
@@ -130,7 +174,7 @@
 
 
 (definst b3
-  [note 60 a 0.01 d 3 s 1 r 0.01]
+  [note 60 a 0.01 d 3 s 1 r 0.01 mul 1]
   (let [freq  (midicps note)
         waves (sin-osc [(* 0.5 freq)
                         freq
@@ -145,15 +189,19 @@
         env (env-gen (envelope [0.7 1 0] [(* 0.03 note-duration) (* 0.9 note-duration)] :welch) :action 2)
                                         ;env   (env-gen (adsr a d s r) :action FREE)]
         ]
-        (* env snd 0.1)))
+    (* env (* mul snd) 0.1)))
 
 (defn play-progression [progression]
-   (reduce (fn [offset chord]
-             (apply play-arpeggio (vec (conj chord offset)))
-             )
-           (now)
-           progression)
-   )
+  (reduce (fn [offset args]
+            (apply offset play-arpeggio (vec
+                                         (concat args [:start-at offset])))
+            )
+          (now)
+          progression                                        ;(apply play-arpeggio (vec (conj chord offset)))
+          )
+  )
+;;(play-progression progression)
+
 
 (defn play-sequences
   (
@@ -199,10 +247,10 @@
     (detect-silence snd :action FREE)
     snd))
 
-(definst pretty-bell [note 60 dur 1.0 amp 1.0]
+(definst pretty-bell [note 60 dur 1.0 mul 1.0]
   (let [
         freq (midicps note)
-        snd (* amp (bell-partials freq dur partials))
+        snd (* mul (bell-partials freq dur partials))
         ]
     (detect-silence snd :action FREE)
     snd))
@@ -213,3 +261,8 @@
 ;(play-arpeggio :A4)
 ;(kill sin-inst)
                                         ;(sin-inst)
+;; (def progression
+;;   [[:root :D4 :type :major :inversion 1 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell]
+;;    [:root :A4 :type :major :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell]
+;;    [:root :B4 :type :minor :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell]
+;;    ])

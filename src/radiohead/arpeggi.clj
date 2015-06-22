@@ -4,9 +4,9 @@
   )
 
 (def progression1
-  [[:D4 :major 1 0.25 (flatten (repeat 11 [2 1 0]))]
-   [:A4 :major 0 0.25 (flatten (repeat 11 [2 1 0]))]
-   [:B4 :minor 0 0.25 (flatten (repeat 11 [2 1 0]))]
+  [[:D4 :major 1 0.25 (flatten (repeat 11 [2 1 0])) pretty-bell]
+   [:A4 :major 0 0.25 (flatten (repeat 11 [2 1 0])) pretty-bell]
+   [:B4 :minor 0 0.25 (flatten (repeat 11 [2 1 0])) pretty-bell]
    ])
 
 (def ocarina-phrase [:E4 :A4 :C#5 :B4 :G4 :F#4 :D5])
@@ -14,18 +14,6 @@
 (def phrase2 [:E5 :A4 :F#4])
 (def phrase3 [:A5 :C#5 :A4])
 (def phrase4 [:F#5 :E4 :G4])
-(play-arpeggio :D4 :major 1 0.25 (flatten (repeat 11 [2 1 0])))
-(play-arpeggio :A4 :major 0 0.25 (flatten (repeat 11 [2 1 0])))
-(play-arpeggio :B4 :minor 0 0.25 (flatten (repeat 11 [2 1 0])))
-
-
-
-
-(defn play-second []
-
-  )
-
-;(play-progression progression1)
 
 
 (let
@@ -34,40 +22,63 @@
      note-duration 0.2
      notes ocarina-phrase
      ]
-  (dotimes [i 20]
-                                        ;(apply-at (+ start (* i (* delta 6 1000))) play-notes [(map note [:G6 :A6 :C#7 :B6 :A6 :D7]) 2 delta pretty-bell])
-    (apply-at (+ start (* i (* note-duration (count notes) 1000))) play-notes [(map note notes) note-duration delta])
+  (dotimes [i 3]
+    (apply-at (+ start (* i (* note-duration (count notes) 1000))) play-notes [:notes (map note notes) :note-duration note-duration :delta delta])
     )
   )
 
-(def repetitions [4 4])
-
-(play-sequences [phrase1 phrase2] 0.2 0.2 b3)
-
-(repeat-phrases [phrase1 phrase2 phrase3 phrase4] [11 11 11 11])
-
-(defn repeat-phrases [phrases repetitions]
-  (let [
-        repeating-phrase (map (fn [phrase repetition]
-                              (repeat repetition phrase)
-                              )
-                              phrases repetitions
-                              )
-        ]
-        (apply play-notes [(flatten repeating-phrase) 0.2 0.2 b3 (now)])
-    )
+(defn repeat-phrases
+  ([phrases repetitions]
+   (repeat-phrases phrases repetitions sin-inst 1)
+   )
+  ([phrases repetitions synth]
+   (repeat-phrases phrases repetitions synth 1)
+   )
+  ([phrases repetitions synth mul]
+    (let [
+          repeating-phrase (map (fn [phrase repetition]
+                                  (repeat repetition phrase)
+                                  )
+                                phrases repetitions
+                                )
+          ]
+      (apply play-notes [:notes (flatten repeating-phrase) :synth synth :mul mul])
+      ))
   )
 
+(repeat-phrases [ocarina-phrase] [3] pretty-bell)
+(repeat-phrases [phrase1 phrase2 phrase3 phrase4] [11 11 11 11] b3 0.4)
 
-(play-notes [:D4 :A4])
+(play-arpeggio :root :D6 :type :major :inversion 1 :note-duration 0.25 :delta 0.2 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
+(play-arpeggio :root :D6 :type :major :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
+(play-arpeggio :root :B6 :type :minor :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
 
 
 
-;(def phrase2 [:G4 :A4 :C#5 :B4 :A4 :D5])
+;; (let
+;;     [start (now)
+;;      delta 0.4
+;;      note-duration 0.2
+;;      notes ocarina-phrase
+;;      ]
+;;   (dotimes [i 3]
+;;     (apply-at (+ start (* i (* note-duration (count notes) 1000))) play-notes [(map note notes) note-duration delta])
+;;     )
+;;   )
 
-(def )
+;; (defn repeat-phrases [phrases repetitions]
+;;   (let [
+;;         repeating-phrase (map (fn [phrase repetition]
+;;                                 (repeat repetition phrase)
+;;                                 )
+;;                               phrases repetitions
+;;                               )
+;;         ]
+;;     (apply play-notes [(flatten repeating-phrase) 0.2 0.2 b3 (now)])
+;;     )
+;;   )
 
-;; (apply play-notes [(map note phrase) 0.2 0.4])
+
 
 ;; (play-arpeggio :D4 :major 1 0.25 (flatten (repeat 11 [2 1 0])) (now))
 ;; (play-arpeggio :A4 :major 0 0.25 (flatten (repeat 11 [2 1 0])) (now))
