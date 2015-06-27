@@ -3,6 +3,8 @@
         overtone.core)
   )
 
+;(connect-external-server 57110)
+
 (def progression1
   [[:D4 :major 1 0.25 (flatten (repeat 11 [2 1 0])) pretty-bell]
    [:A4 :major 0 0.25 (flatten (repeat 11 [2 1 0])) pretty-bell]
@@ -36,23 +38,38 @@
    )
   ([phrases repetitions synth mul]
     (let [
-          repeating-phrase (map (fn [phrase repetition]
-                                  (repeat repetition phrase)
-                                  )
-                                phrases repetitions
-                                )
+          repeating-phrase (flatten
+                             (map (fn [phrase repetition]
+                                    (repeat repetition phrase)
+                                    )
+                                  phrases repetitions
+                                  ))
           ]
-      (apply play-notes [:notes (flatten repeating-phrase) :synth synth :mul mul])
+      (apply play-notes [:notes repeating-phrase :synth synth :mul mul])
       ))
   )
 
+
+(play-notes :notes ocarina-phrase :synth pretty-bell)
+(play-notes :notes phrase1 :synth pretty-bell)
+(play-notes :notes phrase2 :synth sin-inst)
+(play-notes :notes phrase3 :synth sin-inst)
+(play-notes :notes phrase4 :synth sin-inst)
+
+(repeat-phrases [ocarina-phrase] [3] sin-inst)
+
 (repeat-phrases [ocarina-phrase] [3] pretty-bell)
-(repeat-phrases [phrase1 phrase2 phrase3 phrase4] [11 11 11 11] b3 0.4)
+(repeat-phrases [phrase1 phrase2 phrase3 phrase4] [2 2 2 2] b3 0.4)
 
-(play-arpeggio :root :D6 :type :major :inversion 1 :note-duration 0.25 :delta 0.2 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
-(play-arpeggio :root :D6 :type :major :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
-(play-arpeggio :root :B6 :type :minor :inversion 0 :note-duration 0.25 :order (flatten (repeat 11 [2 1 0])) :synth pretty-bell)
+; Play both parts together
+(doall
+  (repeat-phrases [ocarina-phrase] [19] sin-inst)
+  (repeat-phrases [phrase1 phrase2 phrase3 phrase4] [11 11 11 11] b3 0.4))
 
+(play-arpeggio :root :D4 :type :major :inversion 1 :note-duration 0.2 :order (flatten (repeat 3 [2 1 0])) :synth sin-inst)
+(play-arpeggio :root :A4 :type :major :inversion 0 :note-duration 0.2 :order (flatten (repeat 3 [2 1 0])) :synth sin-inst)
+(play-arpeggio :root :D5 :type :major :inversion 0 :note-duration 0.2 :order (flatten (repeat 3 [2 1 0])) :synth sin-inst)
+(play-arpeggio :root :B4 :type :minor :inversion 0 :note-duration 0.2 :order (flatten (repeat 3 [2 1 0])) :synth sin-inst)
 
 
 ;; (let

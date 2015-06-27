@@ -4,10 +4,11 @@
 
 
 (def note-duration 1)
+
 (definst sin-inst [note 60 gate 1 note-duration 1 mul 1]
   (let [
         ;env (env-gen (perc note-duration) :gate gate :action 2)
-        env (env-gen (envelope [0.7 1 0] [(* 0.03 note-duration) (* 0.9 note-duration)] :welch) :gate gate :action 2)
+        env (env-gen (envelope [0.1 1 0] [(* 0.01 note-duration) (* 1 note-duration)] :welch) :gate gate :action 2)
         ;env (env-gen (adsr :sustain 0.2) :action 2)
         ]
     (* env
@@ -26,13 +27,22 @@
   "A function to play a given chord using a given synth and distances.
   The synth must take a midi note as the first argument."
   [& {:keys [root type inversion note-duration order start-at synth delta]
-      :or {root :C4 type :major inversion 0 note-duration 0.2 order [0 1 2] start-at (now) synth sin-inst delta (* note-duration 1000)}}]
+      :or   {root          :C4
+             type          :major
+             inversion     0
+             note-duration 0.2
+             order         [0 1 2]
+             start-at      (now)
+             synth         sin-inst
+             delta         nil
+             }}]
   (let  [
          sorted-notes (sort (invert-chord (chord root type) inversion))
          notes (map #(nth sorted-notes %) order)
-         ;;start (+ (now) delta)
-         start (+ start-at delta)
-         offsets (iterate #(+ % delta) start)
+         delta (if (nil? delta)
+                 (* note-duration 1000)
+                 (* delta 1000))
+         offsets (iterate #(+ % delta) start-at)
          ]
     (doall (map (fn [note offset]
                   (println "playing " note " at " offset)
